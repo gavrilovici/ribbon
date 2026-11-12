@@ -3,10 +3,10 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import type { CacheFacts, Fold, Window } from '../types'
 import {
-  BG, EMPTY, HUE, INK, MUTED, ORANGE, ROBO_SIZE, TEXT, TTL_MIN, TTL_MS, WORD, YELLOW,
+  BADGE, BG, EMPTY, HUE, INK, MUTED, ORANGE, TEXT, TEXT_SIZES, TTL_MIN, TTL_MS, WORD, YELLOW,
   bandPx, cardSvg, chipSvg, costOf, familyOf, fmtIdle, kindOf, mineModel, roboSvg, usd,
 } from './cache-art'
-import type { CacheView } from './cache-art'
+import type { CacheView, TextSize } from './cache-art'
 
 // A band above the prompt in a warm dark look: card surface, cream text,
 // dot-matrix bars. Shows how much of each usage window is LEFT, 7-day first, then
@@ -17,6 +17,10 @@ import type { CacheView } from './cache-art'
 // next message costs to re-cache. Hide / Show folds the card; warm starts folded,
 // cold starts open, and a choice holds until the cache flips. Zero token cost:
 // it reads the engine's own figures and draws.
+//
+// Settings (userConfig): showWeekly hides the 7D window; textSize draws the
+// band's text and badge at caption, footnote or body size where the surface has
+// more than one size (the terminal does not).
 
 const CELLS = 10
 const LOW_AT = 15
@@ -85,7 +89,11 @@ const measure = async ($: EngineInterface, lastAt: number | null, model: string 
   }))
 }
 
-export const register: Register = on => {
+export const register: Register = (on, options) => {
+  const showWeekly = options.showWeekly !== false
+  const textSize: TextSize = TEXT_SIZES.find(s => s === options.textSize) ?? 'body'
+  const badgeSize = BADGE[textSize]
+
   on('session.start', async ($, e, next) => {
     await pull($)
     $.clock.every(TICK_MS, () => $.ui.invalidate('ui.render'))
@@ -148,14 +156,14 @@ export const register: Register = on => {
     // Svg draws on desktop, mobile and VS Code; the terminal gets the text form.
     // Ask the surface, not the table: the terminal's table still lists Svg.
     const Svg = e.surface !== 'terminal' && 'Svg' in ui ? ui.Svg : null
-    const list = await read($, windows)
+    const list = (await read($, windows)).filter(w => showWeekly || w.kind !== 'seven_day')
     const now = await $.clock.now()
     const view = viewOf(await read($, cache), now)
 
     if (list.length === 0 && !view) {
       return (
         <Box backgroundColor={BG} paddingX={1}>
-          <Text color={MUTED}>USAGE · waiting for the first reply</Text>
+          <Text size={textSize} color={MUTED}>USAGE · waiting for the first reply</Text>
         </Box>
       )
     }
@@ -182,12 +190,12 @@ export const register: Register = on => {
       const p = parts(w)
       return (
         <Box key={`w-${i}`} flexDirection="row" flexShrink={0} marginRight={3}>
-          <Text color={MUTED} bold>{p.name} </Text>
-          <Text color={p.col}>{p.d.on}</Text>
-          <Text color={EMPTY}>{p.d.off}</Text>
-          <Text color={p.col} bold> {p.left}% left</Text>
-          {p.left < LOW_AT ? <Text color={TEXT} bold> LOW</Text> : null}
-          {p.reset ? <Text color={MUTED}> · {p.reset}</Text> : null}
+          <Text size={textSize} color={MUTED} bold>{p.name} </Text>
+          <Text size={textSize} color={p.col}>{p.d.on}</Text>
+          <Text size={textSize} color={EMPTY}>{p.d.off}</Text>
+          <Text size={textSize} color={p.col} bold> {p.left}% left</Text>
+          {p.left < LOW_AT ? <Text size={textSize} color={TEXT} bold> LOW</Text> : null}
+          {p.reset ? <Text size={textSize} color={MUTED}> · {p.reset}</Text> : null}
         </Box>
       )
     }
@@ -197,27 +205,27 @@ export const register: Register = on => {
       return (
         <Box key={`w-${i}`} flexDirection="column" flexShrink={0} marginRight={3}>
           <Box flexDirection="row">
-            <Text color={MUTED} bold>{p.name} </Text>
-            <Text color={p.col}>{p.d.on}</Text>
-            <Text color={EMPTY}>{p.d.off}</Text>
+            <Text size={textSize} color={MUTED} bold>{p.name} </Text>
+            <Text size={textSize} color={p.col}>{p.d.on}</Text>
+            <Text size={textSize} color={EMPTY}>{p.d.off}</Text>
           </Box>
           <Box flexDirection="row">
-            <Text color={p.col} bold>{p.left}% left</Text>
-            {p.left < LOW_AT ? <Text color={TEXT} bold> LOW</Text> : null}
+            <Text size={textSize} color={p.col} bold>{p.left}% left</Text>
+            {p.left < LOW_AT ? <Text size={textSize} color={TEXT} bold> LOW</Text> : null}
           </Box>
-          {p.reset ? <Text color={MUTED}>resets {p.reset}</Text> : null}
+          {p.reset ? <Text size={textSize} color={MUTED}>resets {p.reset}</Text> : null}
         </Box>
       )
     }
 
     const label = (
       <Box key="label" flexShrink={0} marginRight={isWide ? 2 : 3}>
-        <Text color={TEXT} bold>USAGE</Text>
+        <Text size={textSize} color={TEXT} bold>USAGE</Text>
       </Box>
     )
     const usage = list.length > 0
       ? list.map(isWide ? wide : stacked)
-      : [<Box key="wait" flexShrink={0} marginRight={3}><Text color={MUTED}>waiting for the first reply</Text></Box>]
+      : [<Box key="wait" flexShrink={0} marginRight={3}><Text size={textSize} color={MUTED}>waiting for the first reply</Text></Box>]
 
     // Before the first reply there is no cache to show: today's band, as it was.
     if (!view) {
@@ -241,22 +249,22 @@ export const register: Register = on => {
 
     const badge = Svg
       ? [
-          <Svg key="robo" source={roboSvg(mode)} alt={cold ? 'Robo, frozen' : 'Robo, bobbing'} width={ROBO_SIZE} height={ROBO_SIZE} isInteractive />,
-          <Text key="gap"> </Text>,
+          <Svg key="robo" source={roboSvg(mode, badgeSize.robo)} alt={cold ? 'Robo, frozen' : 'Robo, bobbing'} width={badgeSize.robo} height={badgeSize.robo} isInteractive />,
+          <Text size={textSize} key="gap"> </Text>,
           (() => {
-            const c = chipSvg(mode)
+            const c = chipSvg(mode, badgeSize.chip)
             return <Svg key="chip" source={c.source} alt={WORD[mode]} width={c.w} height={c.h} />
           })(),
         ]
-      : [<Text key="chip" backgroundColor={hue} color={INK} bold>{` ${WORD[mode]} `}</Text>]
+      : [<Text size={textSize} key="chip" backgroundColor={hue} color={INK} bold>{` ${WORD[mode]} `}</Text>]
 
     const summary = cold
       ? [
-          <Text key="idle" color={hue} bold>{` ${view.idle}`}</Text>,
-          mine ? <Text key="dot" color={MUTED}> · </Text> : null,
-          mine ? <Text key="cost" color={TEXT} bold>{usd(costOf(mine, mode, view.tokens))}</Text> : null,
+          <Text size={textSize} key="idle" color={hue} bold>{` ${view.idle}`}</Text>,
+          mine ? <Text size={textSize} key="dot" color={MUTED}> · </Text> : null,
+          mine ? <Text size={textSize} key="cost" color={TEXT} bold>{usd(costOf(mine, mode, view.tokens))}</Text> : null,
         ]
-      : [<Text key="left" color={hue} bold>{` ${Math.max(0, TTL_MIN - view.idleMin)}m left`}</Text>]
+      : [<Text size={textSize} key="left" color={hue} bold>{` ${Math.max(0, TTL_MIN - view.idleMin)}m left`}</Text>]
 
     const button = Svg ? (
       <Box key="fold" flexShrink={0} alignItems="flex-start">
@@ -290,11 +298,11 @@ export const register: Register = on => {
           {open ? null : (
             <Box key="block" flexDirection="column" flexShrink={0} marginRight={2}>
               <Box flexDirection="row" alignItems="center">{badge}</Box>
-              <Text color={hue} bold>{cold ? `${view.idle} idle` : `${Math.max(0, TTL_MIN - view.idleMin)}m left`}</Text>
+              <Text size={textSize} color={hue} bold>{cold ? `${view.idle} idle` : `${Math.max(0, TTL_MIN - view.idleMin)}m left`}</Text>
               {mine ? (
                 <Box flexDirection="row">
-                  <Text color={TEXT} bold>{usd(costOf(mine, mode, view.tokens))}</Text>
-                  <Text color={MUTED}> next</Text>
+                  <Text size={textSize} color={TEXT} bold>{usd(costOf(mine, mode, view.tokens))}</Text>
+                  <Text size={textSize} color={MUTED}> next</Text>
                 </Box>
               ) : null}
             </Box>

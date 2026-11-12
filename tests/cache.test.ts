@@ -7,6 +7,7 @@ const WINDOWS = [
 ]
 const PROPS = {
   hasSurvey: false,
+  isCollapsed: false,
   isWorking: false,
   maxRows: 12,
   bodyColumns: 80,

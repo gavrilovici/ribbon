@@ -80,6 +80,15 @@ The card shows how long you've been idle, how many tokens are in the cache, and 
 - **Narrow:** the cache moves to its own row.
 - **Terminal:** the same facts as plain text.
 
+## Settings
+
+Ribbon has two settings. Change them in the config menu (`/config`), where each is a row under ribbon, or in `~/.claude/settings.json` under `pluginConfigs`. A change applies right away.
+
+| Setting | Values | Default | What it does |
+| --- | --- | --- | --- |
+| **Show weekly usage** (`showWeekly`) | on / off | on | Off hides the 7D window, so only 5H shows. The row gets shorter, and the Show / Hide button stays in view on a narrower window. |
+| **Text size** (`textSize`) | `caption`, `footnote`, `body` | `body` | Draws the band's text, Robo and the WARM / COLD chip smaller. Works in the desktop app, VS Code and mobile. The terminal has one text size and ignores it. |
+
 ## Good to know
 
 - **It costs nothing to run.** It reads the app's own numbers and draws them. It never calls a model.

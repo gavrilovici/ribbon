@@ -123,8 +123,8 @@ export const chipShapes = (x: number, y: number, word: string, fill: string, siz
 }
 
 /** The WARM or COLD chip beside Robo in the band's row. */
-export const chipSvg = (mode: Mode): { source: string; w: number; h: number } => {
-  const c = chipShapes(0, 0, WORD[mode], HUE[mode], 13, 1)
+export const chipSvg = (mode: Mode, size = 13): { source: string; w: number; h: number } => {
+  const c = chipShapes(0, 0, WORD[mode], HUE[mode], size, 1)
   return { source: svgDoc(c.w, c.h, c.svg, true), w: c.w, h: c.h }
 }
 
@@ -200,7 +200,16 @@ export const roboShapes = (x: number, y: number, size: number, mode: Mode): stri
 
 /** Robo beside the chip in the band's row. */
 export const ROBO_SIZE = 26
-export const roboSvg = (mode: Mode): string => svgDoc(ROBO_SIZE, ROBO_SIZE, roboShapes(0, 0, ROBO_SIZE, mode), false)
+export const roboSvg = (mode: Mode, size = ROBO_SIZE): string => svgDoc(size, size, roboShapes(0, 0, size, mode), false)
+
+/** The band's text size setting, and the Robo and chip sizes that sit beside text of that size. */
+export type TextSize = 'caption' | 'footnote' | 'body'
+export const TEXT_SIZES: readonly TextSize[] = ['caption', 'footnote', 'body']
+export const BADGE: Record<TextSize, { robo: number; chip: number }> = {
+  body: { robo: ROBO_SIZE, chip: 13 },
+  footnote: { robo: 22, chip: 11 },
+  caption: { robo: 18, chip: 10 },
+}
 
 // ---------- The card, laid out for the band's width ----------
 type TextOpts = { size?: number; w?: number; fill?: string; ls?: number; anchor?: string }

@@ -1,11 +1,41 @@
 {
   "name": "ribbon",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A slim band above the prompt: how much of your 5-hour and 7-day usage is left, when each resets, and whether the prompt cache is warm or cold with what the next message costs.",
-  "author": { "name": "Jay E", "url": "https://robonuggets.com" },
+  "author": {
+    "name": "Jay E",
+    "url": "https://robonuggets.com"
+  },
   "homepage": "https://github.com/robonuggets/ribbon",
   "repository": "https://github.com/robonuggets/ribbon",
   "license": "MIT",
-  "keywords": ["usage", "rate-limit", "prompt-cache", "cost", "status", "mod", "claude-code"],
-  "types": "./types/index.d.ts"
+  "keywords": [
+    "usage",
+    "rate-limit",
+    "prompt-cache",
+    "cost",
+    "status",
+    "mod",
+    "claude-code"
+  ],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "showWeekly": {
+      "type": "boolean",
+      "title": "Show weekly usage",
+      "description": "Show the 7-day (7D) window in the band. Off: only the 5-hour window shows, which leaves more room on a narrow window.",
+      "default": true
+    },
+    "textSize": {
+      "type": "string",
+      "title": "Text size",
+      "description": "How large the band's text and badge are drawn in the desktop app, VS Code and mobile. The terminal has one text size and ignores this.",
+      "options": [
+        "caption",
+        "footnote",
+        "body"
+      ],
+      "default": "body"
+    }
+  }
 }
