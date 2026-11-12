@@ -1,11 +1,14 @@
 {
-  "name": "robonuggets",
-  "owner": { "name": "Jay E", "url": "https://robonuggets.com" },
+  "name": "ribbon-fork",
+  "owner": {
+    "name": "Jay E",
+    "url": "https://robonuggets.com"
+  },
   "plugins": [
     {
       "name": "ribbon",
       "source": "./",
-      "description": "A slim band above the prompt: usage left, reset times, and whether the prompt cache is warm or cold with what the next message costs."
+      "description": "A slim band above the prompt: usage left, reset times, and whether the prompt cache is warm or cold with what the next message costs. This fork adds settings to hide the weekly window and shrink the text."
     }
   ]
 }
