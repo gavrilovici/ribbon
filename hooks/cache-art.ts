@@ -107,6 +107,9 @@ const CHIP: Record<string, { w: number; h: number }> = {
   'COLD@13': { w: 58, h: 21 },
   'WARM@11': { w: 54, h: 18 },
   'COLD@11': { w: 50, h: 18 },
+  // Scaled from @13 for the caption text size: word width x 10/13, plus the same 1.24 em padding.
+  'WARM@10': { w: 49, h: 17 },
+  'COLD@10': { w: 45, h: 17 },
   'YOU@10': { w: 36, h: 17 },
 }
 
