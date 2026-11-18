@@ -78,15 +78,16 @@ The card shows how long you've been idle, how many tokens are in the cache, and 
 - **Wide:** everything on one row.
 - **Half width:** each window stacks into a small block.
 - **Narrow:** the cache moves to its own row.
-- **Terminal:** the same facts as plain text.
+- **Terminal:** the same facts as plain text, with the cache first so it never clips off the right edge.
 
 ## Settings
 
-Ribbon has two settings. Change them in the config menu (`/config`), where each is a row under ribbon, or in `~/.claude/settings.json` under `pluginConfigs`. A change applies right away.
+Ribbon has three settings. Change them in the config menu (`/config`), where each is a row under ribbon, or in `~/.claude/settings.json` under `pluginConfigs`. A change applies right away.
 
 | Setting | Values | Default | What it does |
 | --- | --- | --- | --- |
 | **Show weekly usage** (`showWeekly`) | on / off | on | Off hides the 7D window, so only 5H shows. The row gets shorter, and the Show / Hide button stays in view on a narrower window. |
+| **Show 5-hour usage** (`showFiveHour`) | on / off | on | Off hides the 5H window. With both windows off, the band is the prompt cache alone: WARM or COLD, the time left, and the next message's cost. |
 | **Text size** (`textSize`) | `caption`, `footnote`, `body` | `body` | Draws the band's text, Robo and the WARM / COLD chip smaller. Works in the desktop app, VS Code and mobile. The terminal has one text size and ignores it. |
 
 ## Good to know

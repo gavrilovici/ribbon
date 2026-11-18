@@ -91,6 +91,9 @@ const measure = async ($: EngineInterface, lastAt: number | null, model: string 
 
 export const register: Register = (on, options) => {
   const showWeekly = options.showWeekly !== false
+  const showFiveHour = options.showFiveHour !== false
+  // Both windows off: the band is the cache alone, with no USAGE label.
+  const cacheOnly = !showWeekly && !showFiveHour
   const textSize: TextSize = TEXT_SIZES.find(s => s === options.textSize) ?? 'body'
   const badgeSize = BADGE[textSize]
 
@@ -156,14 +159,19 @@ export const register: Register = (on, options) => {
     // Svg draws on desktop, mobile and VS Code; the terminal gets the text form.
     // Ask the surface, not the table: the terminal's table still lists Svg.
     const Svg = e.surface !== 'terminal' && 'Svg' in ui ? ui.Svg : null
-    const list = (await read($, windows)).filter(w => showWeekly || w.kind !== 'seven_day')
+    const term = e.surface === 'terminal'
+    const list = cacheOnly
+      ? []
+      : (await read($, windows)).filter(
+          w => (showWeekly || w.kind !== 'seven_day') && (showFiveHour || w.kind !== 'five_hour'),
+        )
     const now = await $.clock.now()
     const view = viewOf(await read($, cache), now)
 
-    if (list.length === 0 && !view) {
+    if ((list.length === 0 || cacheOnly) && !view) {
       return (
         <Box backgroundColor={BG} paddingX={1}>
-          <Text size={textSize} color={MUTED}>USAGE · waiting for the first reply</Text>
+          <Text size={textSize} color={MUTED}>{cacheOnly ? 'CACHE' : 'USAGE'} · waiting for the first reply</Text>
         </Box>
       )
     }
@@ -225,7 +233,10 @@ export const register: Register = (on, options) => {
     )
     const usage = list.length > 0
       ? list.map(isWide ? wide : stacked)
-      : [<Box key="wait" flexShrink={0} marginRight={3}><Text size={textSize} color={MUTED}>waiting for the first reply</Text></Box>]
+      : cacheOnly
+        ? []
+        : [<Box key="wait" flexShrink={0} marginRight={3}><Text size={textSize} color={MUTED}>waiting for the first reply</Text></Box>]
+    const hasUsage = usage.length > 0
 
     // Before the first reply there is no cache to show: today's band, as it was.
     if (!view) {
@@ -274,7 +285,46 @@ export const register: Register = (on, options) => {
     const grow = <Box key="grow" flexGrow={1} />
 
     let rows
-    if (kind === 'wide') {
+    if (term) {
+      // The terminal leads with the cache: the usage blocks never shrink, so a
+      // cache drawn after them is the first thing to clip off the right edge.
+      const lead = (
+        <Box key="cache" flexDirection="row" flexShrink={0} marginRight={3} alignItems="center">
+          {badge}
+          {summary}
+        </Box>
+      )
+      rows = !hasUsage
+        ? <Box key="row" flexDirection="row" paddingX={1}>{lead}</Box>
+        : isWide
+          ? (
+              <Box key="row" flexDirection="row" paddingX={1} alignItems="center">
+                {lead}
+                {label}
+                {usage}
+              </Box>
+            )
+          : [
+              <Box key="cache-row" flexDirection="row" paddingX={1}>{lead}</Box>,
+              <Box key="row" flexDirection="row" paddingX={1}>
+                {label}
+                {usage}
+              </Box>,
+            ]
+    } else if (!hasUsage) {
+      rows = (
+        <Box key="row" flexDirection="row" paddingX={1} alignItems="center">
+          {open ? null : (
+            <Box key="inline" flexDirection="row" flexShrink={0} marginRight={2} alignItems="center">
+              {badge}
+              {summary}
+            </Box>
+          )}
+          {grow}
+          {button}
+        </Box>
+      )
+    } else if (kind === 'wide') {
       rows = (
         <Box key="row" flexDirection="row" paddingX={1} alignItems="center">
           {label}

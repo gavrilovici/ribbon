@@ -1,6 +1,6 @@
 {
   "name": "ribbon",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A slim band above the prompt: how much of your 5-hour and 7-day usage is left, when each resets, and whether the prompt cache is warm or cold with what the next message costs.",
   "author": {
     "name": "Jay E",
@@ -24,6 +24,12 @@
       "type": "boolean",
       "title": "Show weekly usage",
       "description": "Show the 7-day (7D) window in the band. Off: only the 5-hour window shows, which leaves more room on a narrow window.",
+      "default": true
+    },
+    "showFiveHour": {
+      "type": "boolean",
+      "title": "Show 5-hour usage",
+      "description": "Show the 5-hour (5H) window in the band. With this and Show weekly usage both off, the band shows only the prompt cache: warm or cold, the time left, and the next message's cost.",
       "default": true
     },
     "textSize": {

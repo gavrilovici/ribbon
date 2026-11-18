@@ -120,3 +120,58 @@ test('a cleared session drops the cache until the next reply', async ($, on) => 
   expect(await band.find({ text: ' 99% left' })).toBeDefined()
   await band.unmount()
 })
+
+test('the terminal leads with the warm cache and its minutes left, before the usage windows', async ($, on) => {
+  mock.store(on)
+  mock.clock(on, { now: NOW })
+  on('session.start', ($, e) => ({ cwd: e.cwd }))
+  on('session.usage', () => ({ value: { startedAt: 0, context: { window: 1000000 }, rateLimits: WINDOWS } }))
+  on('classic.SessionStart', () => ({}))
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await $.classic.SessionStart({ source: 'resume', seconds_since_last_response: WARM_IDLE, context_tokens: 770000, model: 'claude-opus-5-5' })
+  for (const bodyColumns of [120, 80, 36]) {
+    const band = await $.ui.mount({ plugin: 'ribbon', surface: 'terminal', component: 'AbovePrompt', props: { ...PROPS, bodyColumns } })
+    expect(await band.find({ text: ' WARM ' })).toBeDefined()
+    expect(await band.find({ text: ' 42m left' })).toBeDefined()
+    const all = JSON.stringify(await band.find({ type: 'Box' }))
+    expect(all.indexOf('WARM')).toBeGreaterThan(-1)
+    expect(all.indexOf('WARM')).toBeLessThan(all.indexOf('7D'))
+    expect(all.indexOf('42m left')).toBeLessThan(all.indexOf('5H'))
+    await band.unmount()
+  }
+})
+
+test(
+  'with both windows off the band is the cache alone, with no USAGE label',
+  { options: { showWeekly: false, showFiveHour: false } },
+  async ($, on) => {
+    mock.store(on)
+    mock.clock(on, { now: NOW })
+    on('session.start', ($, e) => ({ cwd: e.cwd }))
+    on('session.usage', () => ({ value: { startedAt: 0, context: { window: 1000000 }, rateLimits: WINDOWS } }))
+    on('classic.SessionStart', () => ({}))
+    await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+    await $.classic.SessionStart({ source: 'resume', seconds_since_last_response: WARM_IDLE, context_tokens: 770000, model: 'claude-opus-5-5' })
+    for (const surface of ['terminal', 'desktop'] as const) {
+      for (const bodyColumns of [120, 36]) {
+        const band = await $.ui.mount({ plugin: 'ribbon', surface, component: 'AbovePrompt', props: { ...PROPS, bodyColumns } })
+        expect(await band.find({ text: ' 42m left' })).toBeDefined()
+        // Text nodes only: the drawings' SVG source holds an embedded font.
+        const all = JSON.stringify(await band.findAll({ type: 'Text' }))
+        for (const gone of ['USAGE', '7D', '5H', 'waiting']) expect([surface, bodyColumns, gone, all.includes(gone)]).toEqual([surface, bodyColumns, gone, false])
+        await band.unmount()
+      }
+    }
+  },
+)
+
+test('with both windows off, before the first reply the band says CACHE is waiting', { options: { showWeekly: false, showFiveHour: false } }, async ($, on) => {
+  mock.store(on)
+  mock.clock(on, { now: NOW })
+  on('session.start', ($, e) => ({ cwd: e.cwd }))
+  on('session.usage', () => ({ value: { startedAt: 0, context: { window: 1000000 }, rateLimits: WINDOWS } }))
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  const band = await $.ui.mount({ plugin: 'ribbon', surface: 'terminal', component: 'AbovePrompt', props: PROPS })
+  expect(await band.find({ text: 'CACHE · waiting for the first reply' })).toBeDefined()
+  await band.unmount()
+})
